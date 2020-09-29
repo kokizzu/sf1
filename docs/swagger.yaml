@@ -1,0 +1,113 @@
+basePath: /
+definitions:
+  cProductManager.Product_ById_Response:
+    properties:
+      error:
+        type: string
+      row:
+        $ref: '#/definitions/model.Product'
+        type: object
+    type: object
+  cProductManager.Product_List_Response:
+    properties:
+      count:
+        type: integer
+      error:
+        type: string
+      rows:
+        items:
+          $ref: '#/definitions/model.Product'
+        type: array
+    type: object
+  cProductManager.Product_Upsert_Request:
+    properties:
+      action:
+        type: string
+      product:
+        $ref: '#/definitions/model.Product'
+        type: object
+    type: object
+  cProductManager.Product_Upsert_Response:
+    properties:
+      error:
+        type: string
+      product:
+        $ref: '#/definitions/model.Product'
+        type: object
+    type: object
+  model.Product:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+    type: object
+host: 127.0.0.1:9090
+info:
+  contact:
+    name: Kiswono Prayogo
+  license: {}
+  title: SF1
+  version: "1.0"
+paths:
+  /product_manager/product/by-id/{productId}:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: product id
+        in: path
+        name: productId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/cProductManager.Product_ById_Response'
+      summary: get product by id
+  /product_manager/product/list/{limit}/{offset}:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: 'page, default: 0'
+        in: path
+        name: offset
+        required: true
+        type: integer
+      - description: 'page size, default: 10'
+        in: path
+        name: limit
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/cProductManager.Product_List_Response'
+      summary: get product list
+  /product_manager/product/modify:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: id and fields of product that want to be updated/deleted, inserted=0
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/cProductManager.Product_Upsert_Request'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/cProductManager.Product_Upsert_Response'
+      summary: update product information
+swagger: "2.0"

@@ -1,0 +1,76 @@
+version: '3'
+services:
+  postgres1:
+    image: "postgres" # latest
+    env_file:
+      - database.env 
+    volumes:
+      - database-data:/tmp/db1
+    ports:
+      - "5432:5432"
+  sf1: # comment this on development mode
+    image: "kokizzu/sf1:latest"
+#    build: .
+    depends_on:
+      - postgres1
+    env_file:
+      - database.env
+      - sf1.env
+    ports:
+      - "9090:9090"
+      - "9091:9091"
+    
+#  elasticsearch1:
+#    image: docker.elastic.co/elasticsearch/elasticsearch:7.9.2
+#    container_name: elasticsearch
+#    environment:
+#      - cluster.name=docker-cluster
+#      - bootstrap.memory_lock=true
+#      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+#    ulimits:
+#      memlock:
+#        soft: -1
+#        hard: -1
+#    volumes:
+#      - esdata:/usr/share/elasticsearch/data
+#    networks:
+#      - mynet
+#    ports:
+#      - "9200:9200"
+#  kibana1:
+#    image: docker.elastic.co/kibana/kibana:7.9.2
+#    container_name: kibana
+#    environment:
+#      - ./kibana.yml:/usr/share/kibana/config/kibana.yml
+#    networks:
+#      - mynet
+#    ports:
+#      - "5601:5601"
+#    depends_on:
+#      - elasticsearch1
+#  tarantool1:
+#    image: tarantool/tarantool:1.10.2
+#    networks:
+#      - mynet
+#    ports:
+#      - "3301:3301"
+#  sf1:
+#    build: .
+#    ports: 
+#      - "9090:9090"
+#      - "9091:9091"
+#    env_file:
+#      - database.env
+#      - sf1.env
+#    depends_on:
+#      - postgres1
+#      - tarantool1
+#      - elasticsearch1
+
+#networks:
+#  mynet:
+#    driver: bridge
+    
+volumes:
+  database-data:
+  esdata:

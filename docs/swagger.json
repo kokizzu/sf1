@@ -1,0 +1,174 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "title": "SF1",
+        "contact": {
+            "name": "Kiswono Prayogo"
+        },
+        "license": {},
+        "version": "1.0"
+    },
+    "host": "127.0.0.1:9090",
+    "basePath": "/",
+    "paths": {
+        "/product_manager/product/by-id/{productId}": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "get product by id",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "product id",
+                        "name": "productId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/cProductManager.Product_ById_Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/product_manager/product/list/{limit}/{offset}": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "get product list",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "page, default: 0",
+                        "name": "offset",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page size, default: 10",
+                        "name": "limit",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/cProductManager.Product_List_Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/product_manager/product/modify": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "update product information",
+                "parameters": [
+                    {
+                        "description": "id and fields of product that want to be updated/deleted, inserted=0",
+                        "name": "product",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/cProductManager.Product_Upsert_Request"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/cProductManager.Product_Upsert_Response"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "cProductManager.Product_ById_Response": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "row": {
+                    "type": "object",
+                    "$ref": "#/definitions/model.Product"
+                }
+            }
+        },
+        "cProductManager.Product_List_Response": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "error": {
+                    "type": "string"
+                },
+                "rows": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Product"
+                    }
+                }
+            }
+        },
+        "cProductManager.Product_Upsert_Request": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string"
+                },
+                "product": {
+                    "type": "object",
+                    "$ref": "#/definitions/model.Product"
+                }
+            }
+        },
+        "cProductManager.Product_Upsert_Response": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "product": {
+                    "type": "object",
+                    "$ref": "#/definitions/model.Product"
+                }
+            }
+        },
+        "model.Product": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}
