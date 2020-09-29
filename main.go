@@ -25,6 +25,9 @@ func main() {
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORS())
 
+	e.Debug = true
+	e.Static(`/`, `view/public`)
+
 	// init dependencies
 	dep := model.InitDependency()
 
@@ -32,7 +35,6 @@ func main() {
 	e.GET(`/swagger/*`, echoSwagger.WrapHandler)
 
 	// APIs
-	e.File("/", "swagger.json")
 	e.GET(`/product_manager/product/list/:limit/:offset`, dep.Wrap(cProductManager.Product_List))
 	e.GET(`/product_manager/product/by-id/:productId`, dep.Wrap(cProductManager.Product_ById))
 	e.POST(`/product_manager/product/modify`, dep.Wrap(cProductManager.Product_Upsert)) // includes delete, insert, update

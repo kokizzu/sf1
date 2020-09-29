@@ -8,7 +8,7 @@ Create multiple svelte-pages with this template. Relies on default template http
 npx degit Tom-Siegel/multi-page-svelte
 ```
 
-1. Create as many Page-files as you want (see src/main.js or src/second.js)
+1. Create as many Page-files as you want (see src/index.js or src/second.js)
 2. Go to rollup-pages.config.js and set the inputs
 
 ```javascript
@@ -22,7 +22,7 @@ const inputs = [
 ];
 ```
 
-3. Set up your html-files by adding the main.js, main.css and global.css
+3. Set up your html-files by adding the index.js, main.css and global.css
 4. Build the project
 
 ```shell
@@ -43,6 +43,6 @@ npm run start
 
 Open your browser url: localhost:5000
 
-main.js --> http://localhost:5000/index.html
+index.js --> http://localhost:5000/index.html
 
 second.js --> http://localhost:5000/second.html

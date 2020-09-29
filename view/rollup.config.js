@@ -32,12 +32,12 @@ function serve() {
 }
 
 export default {
-  input: "src/main.js",
+  input: "src/index.js",
   output: {
     sourcemap: true,
     format: "iife",
     name: "app",
-    file: "public/build/bundle.js",
+    file: "public/build/index.js",
   },
   plugins: [
     svelte({
@@ -46,7 +46,7 @@ export default {
       // we'll extract any component CSS out into
       // a separate file - better for performance
       css: (css) => {
-        css.write("public/build/bundle.css");
+        css.write("public/build/index.css");
       },
     }),
 

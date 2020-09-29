@@ -38,13 +38,13 @@ packageJSON.scripts = Object.assign(packageJSON.scripts, {
 // Write the package JSON
 fs.writeFileSync(path.join(projectRoot, "package.json"), JSON.stringify(packageJSON, null, "  "))
 
-// mv src/main.js to main.ts - note, we need to edit rollup.config.js for this too
-const beforeMainJSPath = path.join(projectRoot, "src", "main.js")
+// mv src/index.js to main.ts - note, we need to edit rollup.config.js for this too
+const beforeMainJSPath = path.join(projectRoot, "src", "index.js")
 const afterMainTSPath = path.join(projectRoot, "src", "main.ts")
 fs.renameSync(beforeMainJSPath, afterMainTSPath)
 
 // Switch the app.svelte file to use TS
-const appSveltePath = path.join(projectRoot, "src", "App.svelte")
+const appSveltePath = path.join(projectRoot, "src", "Index.svelte")
 let appFile = fs.readFileSync(appSveltePath, "utf8")
 appFile = appFile.replace("<script>", '<script lang="ts">')
 appFile = appFile.replace("export let name;", 'export let name: string;')

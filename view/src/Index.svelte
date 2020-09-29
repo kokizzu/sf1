@@ -25,5 +25,7 @@
 
 <main>
   <h1>Hello {name}!</h1>
-  <p>Main Svelte-Page</p>
+  <p>Main</p>
+  <a href="/second.html">Second</a>
+  <a href="/swagger/index.html">Swagger</a>
 </main>

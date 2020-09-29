@@ -31,6 +31,7 @@ source_env() {
 source_env database.env
 source_env sf1.env
 
+sleep 1 # wait docker compose
 echo '# start gin app :9090'
 (gin -i -b sf1.exe -p 9090 -a 9091)
 
