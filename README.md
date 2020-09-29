@@ -62,7 +62,7 @@ psql --host=$POSTGRES_DB --username=$POSTGRES_USER --dbname=$POSTGRES_PASSWORD
 ```
 
 ## TODO
- - [ ] push to docker hub
+ - [x] push to docker hub
  - [ ] add envoy/caddy reverse proxy
  - [ ] add authentication
  - [ ] deploy script (with and without kube)
