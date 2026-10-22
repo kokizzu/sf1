@@ -9,6 +9,11 @@ type Assignment struct {
 	Value  interface{}
 }
 
+// Assigner assignments provider interface
+type Assigner interface {
+	Assignments() []Assignment
+}
+
 func (set Set) Name() string {
 	return "SET"
 }
@@ -24,9 +29,9 @@ func (set Set) Build(builder Builder) {
 			builder.AddVar(builder, assignment.Value)
 		}
 	} else {
-		builder.WriteQuoted(PrimaryColumn)
+		builder.WriteQuoted(Column{Name: PrimaryKey})
 		builder.WriteByte('=')
-		builder.WriteQuoted(PrimaryColumn)
+		builder.WriteQuoted(Column{Name: PrimaryKey})
 	}
 }
 
@@ -36,6 +41,9 @@ func (set Set) MergeClause(clause *Clause) {
 	copy(copiedAssignments, set)
 	clause.Expression = Set(copiedAssignments)
 }
+
+// Assignments implements Assigner for Set.
+func (set Set) Assignments() []Assignment { return []Assignment(set) }
 
 func Assignments(values map[string]interface{}) Set {
 	keys := make([]string, 0, len(values))
@@ -58,3 +66,6 @@ func AssignmentColumns(values []string) Set {
 	}
 	return assignments
 }
+
+// Assignments implements Assigner for a single Assignment.
+func (a Assignment) Assignments() []Assignment { return []Assignment{a} }

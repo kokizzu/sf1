@@ -13,20 +13,46 @@ import (
 	"gorm.io/gorm/utils"
 )
 
-func isPrintable(s []byte) bool {
+const (
+	tmFmtWithMS = "2006-01-02 15:04:05.999"
+	tmFmtZero   = "0000-00-00 00:00:00"
+	nullStr     = "NULL"
+)
+
+func isPrintable(s string) bool {
 	for _, r := range s {
-		if !unicode.IsPrint(rune(r)) {
+		if !unicode.IsPrint(r) {
 			return false
 		}
 	}
 	return true
 }
 
-var convertableTypes = []reflect.Type{reflect.TypeOf(time.Time{}), reflect.TypeOf(false), reflect.TypeOf([]byte{})}
+// A list of Go types that should be converted to SQL primitives
+var convertibleTypes = []reflect.Type{reflect.TypeOf(time.Time{}), reflect.TypeOf(false), reflect.TypeOf([]byte{})}
 
+// RegEx matches only numeric values
+var numericPlaceholderRe = regexp.MustCompile(`\$\d+\$`)
+
+func isNumeric(k reflect.Kind) bool {
+	switch k {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return true
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return true
+	case reflect.Float32, reflect.Float64:
+		return true
+	default:
+		return false
+	}
+}
+
+// ExplainSQL generate SQL string with given parameters, the generated SQL is expected to be used in logger, execute it might introduce a SQL injection vulnerability
 func ExplainSQL(sql string, numericPlaceholder *regexp.Regexp, escaper string, avars ...interface{}) string {
-	var convertParams func(interface{}, int)
-	var vars = make([]string, len(avars))
+	var (
+		convertParams func(interface{}, int)
+		vars          = make([]string, len(avars))
+	)
 
 	convertParams = func(v interface{}, idx int) {
 		switch v := v.(type) {
@@ -34,59 +60,88 @@ func ExplainSQL(sql string, numericPlaceholder *regexp.Regexp, escaper string, a
 			vars[idx] = strconv.FormatBool(v)
 		case time.Time:
 			if v.IsZero() {
-				vars[idx] = escaper + "0000-00-00 00:00:00" + escaper
+				vars[idx] = escaper + tmFmtZero + escaper
 			} else {
-				vars[idx] = escaper + v.Format("2006-01-02 15:04:05.999") + escaper
+				vars[idx] = escaper + v.Format(tmFmtWithMS) + escaper
 			}
 		case *time.Time:
 			if v != nil {
 				if v.IsZero() {
-					vars[idx] = escaper + "0000-00-00 00:00:00" + escaper
+					vars[idx] = escaper + tmFmtZero + escaper
 				} else {
-					vars[idx] = escaper + v.Format("2006-01-02 15:04:05.999") + escaper
+					vars[idx] = escaper + v.Format(tmFmtWithMS) + escaper
 				}
 			} else {
-				vars[idx] = "NULL"
+				vars[idx] = nullStr
 			}
-		case fmt.Stringer:
-			vars[idx] = escaper + strings.Replace(fmt.Sprintf("%v", v), escaper, "\\"+escaper, -1) + escaper
 		case driver.Valuer:
 			reflectValue := reflect.ValueOf(v)
 			if v != nil && reflectValue.IsValid() && ((reflectValue.Kind() == reflect.Ptr && !reflectValue.IsNil()) || reflectValue.Kind() != reflect.Ptr) {
 				r, _ := v.Value()
 				convertParams(r, idx)
 			} else {
-				vars[idx] = "NULL"
+				vars[idx] = nullStr
+			}
+		case fmt.Stringer:
+			reflectValue := reflect.ValueOf(v)
+			switch reflectValue.Kind() {
+			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+				vars[idx] = strconv.FormatInt(reflectValue.Int(), 10)
+			case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+				vars[idx] = strconv.FormatUint(reflectValue.Uint(), 10)
+			case reflect.Float32, reflect.Float64:
+				vars[idx] = strconv.FormatFloat(reflectValue.Float(), 'f', 6, 64)
+			case reflect.Bool:
+				vars[idx] = strconv.FormatBool(reflectValue.Bool())
+			case reflect.String:
+				vars[idx] = escaper + strings.ReplaceAll(fmt.Sprintf("%v", v), escaper, escaper+escaper) + escaper
+			default:
+				if v != nil && reflectValue.IsValid() && ((reflectValue.Kind() == reflect.Ptr && !reflectValue.IsNil()) || reflectValue.Kind() != reflect.Ptr) {
+					vars[idx] = escaper + strings.ReplaceAll(fmt.Sprintf("%v", v), escaper, escaper+escaper) + escaper
+				} else {
+					vars[idx] = nullStr
+				}
 			}
 		case []byte:
-			if isPrintable(v) {
-				vars[idx] = escaper + strings.Replace(string(v), escaper, "\\"+escaper, -1) + escaper
+			if s := string(v); isPrintable(s) {
+				vars[idx] = escaper + strings.ReplaceAll(s, escaper, escaper+escaper) + escaper
 			} else {
 				vars[idx] = escaper + "<binary>" + escaper
 			}
 		case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
 			vars[idx] = utils.ToString(v)
-		case float64, float32:
-			vars[idx] = fmt.Sprintf("%.6f", v)
+		case float32:
+			vars[idx] = strconv.FormatFloat(float64(v), 'f', -1, 32)
+		case float64:
+			vars[idx] = strconv.FormatFloat(v, 'f', -1, 64)
 		case string:
-			vars[idx] = escaper + strings.Replace(v, escaper, "\\"+escaper, -1) + escaper
+			vars[idx] = escaper + strings.ReplaceAll(v, escaper, escaper+escaper) + escaper
 		default:
 			rv := reflect.ValueOf(v)
 			if v == nil || !rv.IsValid() || rv.Kind() == reflect.Ptr && rv.IsNil() {
-				vars[idx] = "NULL"
+				vars[idx] = nullStr
 			} else if valuer, ok := v.(driver.Valuer); ok {
 				v, _ = valuer.Value()
 				convertParams(v, idx)
 			} else if rv.Kind() == reflect.Ptr && !rv.IsZero() {
 				convertParams(reflect.Indirect(rv).Interface(), idx)
+			} else if isNumeric(rv.Kind()) {
+				switch {
+				case rv.CanInt():
+					vars[idx] = strconv.FormatInt(rv.Int(), 10)
+				case rv.CanUint():
+					vars[idx] = strconv.FormatUint(rv.Uint(), 10)
+				default:
+					vars[idx] = strconv.FormatFloat(rv.Float(), 'f', 6, 64)
+				}
 			} else {
-				for _, t := range convertableTypes {
+				for _, t := range convertibleTypes {
 					if rv.Type().ConvertibleTo(t) {
 						convertParams(rv.Convert(t).Interface(), idx)
 						return
 					}
 				}
-				vars[idx] = escaper + strings.Replace(fmt.Sprint(v), escaper, "\\"+escaper, -1) + escaper
+				vars[idx] = escaper + strings.ReplaceAll(fmt.Sprint(v), escaper, escaper+escaper) + escaper
 			}
 		}
 	}
@@ -113,9 +168,18 @@ func ExplainSQL(sql string, numericPlaceholder *regexp.Regexp, escaper string, a
 		sql = newSQL.String()
 	} else {
 		sql = numericPlaceholder.ReplaceAllString(sql, "$$$1$$")
-		for idx, v := range vars {
-			sql = strings.Replace(sql, "$"+strconv.Itoa(idx+1)+"$", v, 1)
-		}
+
+		sql = numericPlaceholderRe.ReplaceAllStringFunc(sql, func(v string) string {
+			num := v[1 : len(v)-1]
+			n, _ := strconv.Atoi(num)
+
+			// position var start from 1 ($1, $2)
+			n -= 1
+			if n >= 0 && n <= len(vars)-1 {
+				return vars[n]
+			}
+			return v
+		})
 	}
 
 	return sql

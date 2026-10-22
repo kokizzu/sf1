@@ -1,3 +1,4 @@
+// Package clause provides the clause interface and common clause implementations for GORM.
 package clause
 
 // Interface clause interface
@@ -7,7 +8,7 @@ type Interface interface {
 	MergeClause(*Clause)
 }
 
-// ClauseBuilder clause builder, allows to custmize how to build clause
+// ClauseBuilder clause builder, allows to customize how to build clause
 type ClauseBuilder func(Clause, Builder)
 
 type Writer interface {
@@ -20,6 +21,7 @@ type Builder interface {
 	Writer
 	WriteQuoted(field interface{})
 	AddVar(Writer, ...interface{})
+	AddError(error) error
 }
 
 // Clause
@@ -62,9 +64,9 @@ func (c Clause) Build(builder Builder) {
 }
 
 const (
-	PrimaryKey   string = "@@@py@@@" // primary key
-	CurrentTable string = "@@@ct@@@" // current table
-	Associations string = "@@@as@@@" // associations
+	PrimaryKey   string = "~~~py~~~" // primary key
+	CurrentTable string = "~~~ct~~~" // current table
+	Associations string = "~~~as~~~" // associations
 )
 
 var (
